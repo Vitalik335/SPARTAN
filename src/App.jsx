@@ -1,101 +1,162 @@
 import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import './index.css';
 
-// --- БАЗА ДАННЫХ РАСПИСАНИЯ ---
-const scheduleDB = {
-  "Monday": [
-    { id: 'm1', time: '05:30', cat: 'Gym', title: 'Утренняя зарядка', details: ['Отжимания: 3x15', 'Пресс: 3x20', 'Планка: 60 сек'] },
-    { id: 'm2', time: '06:30', cat: 'Food', title: 'Завтрак', details: ['Омлет (3 яйца)', 'Шпинат, лук и перец (2 горсти)', '1 тост Whole Wheat'] },
-    { id: 'm3', time: '12:20', cat: 'Food', title: 'Обед (Контейнер)', details: ['Запеченная грудка: 150г', 'Brown Rice: 1 cup (вареного)', 'Овощной микс (Брокколи, перец): 200г+'] },
-    { id: 'm4', time: '17:15', cat: 'Food', title: 'Ужин: Сэндвич', details: ['Хлеб Whole Wheat: 2 куска', 'Turkey Deli meat: 5 слайсов', 'Огурец, лук и листья салата'] },
-    { id: 'm5', time: '21:30', cat: 'Life', title: 'Сон', details: ['Без телефона за 30 мин', 'Полная темнота'] }
-  ],
-  "Tuesday": [
-    { id: 'tu2', time: '06:30', cat: 'Food', title: 'Завтрак', details: ['Oatmeal сухая: 0.5 cup', 'Peanut butter: 1 tbsp', '1 банан'] },
-    { id: 'tu3', time: '14:00', cat: 'Food', title: 'Обед (в окне)', details: ['Тушеный говяжий фарш: 150г', 'Pasta вареная: 1 cup', 'Зеленая фасоль и лук: 0.5 банки'] },
-    { id: 'tu4', time: '16:45', cat: 'Food', title: 'Ужин', details: ['Brown Rice: 1 cup', 'Мясо запеченное: 150г', 'Овощи (болгарский перец и огурец)'] }
-  ],
-  "Wednesday": [
-    { id: 'w2', time: '12:30', cat: 'Food', title: 'Обед', details: ['Tuna in Water: 1 пакет', 'Spring Mix + Перец + Лук', '2 тоста (можно заменить Рис на Батат!)'] },
-    { id: 'w3', time: '18:00', cat: 'Food', title: 'Ужин', details: ['Рыба запеченная: 200г', 'Большой овощной салат: полпакета'] }
-  ],
-  "Thursday": [
-    { id: 'th2', time: '14:00', cat: 'Food', title: 'Обед', details: ['Запеченная индейка: 150г', 'Brown Rice: 1 cup', 'Брокколи и перец: 200г'] },
-    { id: 'th3', time: '17:00', cat: 'Gym', title: 'ЗАЛ: ГРУДЬ + ПЛЕЧИ', details: ['Жим лежа: 3x12', 'Жим сидя: 3x12', 'Махи: 3x15', 'Тяга блока К ПОЯСУ: 3x12'] }
-  ],
-  "Friday": [
-    { id: 'fr2', time: '13:15', cat: 'Food', title: 'Обед', details: ['Сэндвич (150г индейки)', 'Овощная нарезка (перец, морковь, огурец)'] },
-    { id: 'fr3', time: '14:00', cat: 'Gym', title: 'ЗАЛ: СПИНА', details: ['ПОДТЯГИВАНИЯ: max (на ширину)', 'Тяга ВЕРХНЕГО блока: 3x12 (на ширину)', 'Тяга блока К ПОЯСУ: 3x12 (на толщину)', 'Бицепс: 3x12'] }
-  ],
-  "Saturday": [
-    { id: 'sa2', time: '10:00', cat: 'Gym', title: 'ЗАЛ: НОГИ', details: ['Жим ногами: 3x12', 'Сгибание ног: 3x12', 'Пресс: 3x20'] },
-    { id: 'sa3', time: '18:00', cat: 'Food', title: 'CHEAT MEAL', details: ['Бургер (Whataburger)', 'Маленькая картошка'] }
-  ],
-  "Sunday": [
-    { id: 'su1', time: '12:30', cat: 'Food', title: 'Обед', details: ['Курица запеченая: 200г', '1 средний БАТАТ (запеченный)'] },
-    { id: 'su2', time: '14:00', cat: 'Gym', title: 'ЗАЛ: КАРДИО', details: ['45 мин ходьба (уклон 5-10%)', 'Растяжка'] }
-  ]
+// --- MEGA DATABASE: WEEK 1 & WEEK 2 (Двуязычный список и инструкции) ---
+const megaDatabase = {
+  week1: {
+    prep: {
+      shopping: [
+        "Chicken Breast (Куриная грудка) - 3 lbs", 
+        "Turkey Tenderloin (Филе индейки для запекания)", 
+        "Salmon (Лосось)", 
+        "Brown Rice (Бурый рис)", 
+        "Sweet Potatoes (Батат) - 3 pcs", 
+        "Apples (Яблоки)", 
+        "Berries (Ягоды)", 
+        "Rice Cakes (Хлебцы)", 
+        "Spinach & Peppers (Шпинат и перец)"
+      ],
+      instructions: [
+        "EN: Bake Chicken at 400°F for 22 min. RU: Запекать курицу при 200°C 22 мин.",
+        "EN: Bake Turkey Tenderloin at 400°F for 30 min. RU: Запекать индейку при 200°C 30 мин.",
+        "EN: Salmon: 400°F for 15 min. RU: Лосось: 200°C на 15 мин.",
+        "EN: Rice: 1.5 cup dry + 3 cups water. RU: Рис: 1.5 ст. сухого + 3 ст. воды.",
+        "EN: Sweet Potato: 7 min in microwave. RU: Батат: 7 мин в микроволновке."
+      ]
+    },
+    schedule: {
+      "Monday": [
+        { id: 'w1m1', time: '05:30', cat: 'Gym', title: 'Утренняя зарядка', details: ['Отжимания: 3x15', 'Пресс: 3x20', 'Планка: 60 сек'] },
+        { id: 'w1m2', time: '06:30', cat: 'Food', title: 'Завтрак', details: ['Омлет (3 яйца)', 'Шпинат, лук и перец', 'Половина авокадо'] },
+        { id: 'w1m3', time: '12:20', cat: 'Food', title: 'Обед (Контейнер)', details: ['Запеченная грудка: 150г', 'Brown Rice: 1 cup', 'Овощи: БЕЗ ОГРАНИЧЕНИЙ'] },
+        { id: 'w1m4', time: '15:30', cat: 'Food', title: 'Перекус', details: ['1 Зеленое яблоко'] },
+        { id: 'w1m5', time: '17:15', cat: 'Food', title: 'Ужин: Хлебцы с индейкой', details: ['2-3 Рисовых хлебца', 'Turkey Deli meat (нарезка): 5 слайсов', 'Огурец и горчица'] }
+      ],
+      "Tuesday": [
+        { id: 'w1tu1', time: '06:30', cat: 'Food', title: 'Завтрак: Овсянка', details: ['Oatmeal сухая: 0.5 cup', 'Горячее молоко', '1 банан'] },
+        { id: 'w1tu2', time: '14:00', cat: 'Food', title: 'Обед', details: ['Тушеный говяжий фарш: 150г', 'Pasta вареная: 1 cup', 'Зеленая фасоль и лук'] },
+        { id: 'w1tu3', time: '16:00', cat: 'Food', title: 'Перекус', details: ['Горсть ягод'] },
+        { id: 'w1tu4', time: '16:45', cat: 'Food', title: 'Ужин', details: ['Brown Rice: 1 cup', 'Мясо запеченное: 150г', 'Перец и огурец'] }
+      ],
+      "Wednesday": [
+        { id: 'w1w1', time: '12:30', cat: 'Food', title: 'Обед: Хлебцы с тунцом', details: ['Tuna in Water: 1 пакет', '2-3 Рисовых хлебца', 'Лук, перец'] },
+        { id: 'w1w2', time: '15:00', cat: 'Food', title: 'Перекус', details: ['1 Яблоко'] },
+        { id: 'w1w3', time: '18:00', cat: 'Food', title: 'Ужин: Salmon (Лосось)', details: ['Филе лосося (200г)', 'Запекать 12-15 мин при 400°F', 'Большой салат: Spring Mix, перец, огурец'] }
+      ],
+      "Thursday": [
+        { id: 'w1th1', time: '06:30', cat: 'Food', title: 'Завтрак: Овсянка', details: ['Oatmeal сухая: 0.5 cup', 'Горячее молоко', '1 банан'] },
+        { id: 'w1th2', time: '14:00', cat: 'Food', title: 'Обед: Филе Индейки', details: ['Turkey Breast Tenderloin (150г)', 'Brown Rice: 1 cup', 'Запеченный болгарский перец'] },
+        { id: 'w1th3', time: '17:00', cat: 'Gym', title: 'ЗАЛ: ГРУДЬ + ПЛЕЧИ', details: ['Жим лежа: 3x12', 'Жим сидя: 3x12', 'Махи: 3x15', 'Тяга блока К ПОЯСУ: 3x12'] }
+      ],
+      "Friday": [
+        { id: 'w1fr1', time: '13:15', cat: 'Food', title: 'Обед: Хлебцы + Индейка', details: ['2-3 Рисовых хлебца', 'Turkey Deli meat: 150г', 'Овощная нарезка'] },
+        { id: 'w1fr2', time: '15:30', cat: 'Food', title: 'Перекус', details: ['Горсть ягод'] },
+        { id: 'w1fr3', time: '14:00', cat: 'Gym', title: 'ЗАЛ: СПИНА', details: ['ПОДТЯГИВАНИЯ: max', 'Тяга ВЕРХНЕГО блока: 3x12', 'Тяга блока К ПОЯСУ: 3x12', 'Бицепс: 3x12'] }
+      ],
+      "Saturday": [
+        { id: 'w1sa1', time: '10:00', cat: 'Gym', title: 'ЗАЛ: НОГИ', details: ['Жим ногами: 3x12', 'Сгибание ног: 3x12', 'Пресс: 3x20'] },
+        { id: 'w1sa2', time: '18:00', cat: 'Food', title: 'CHEAT MEAL', details: ['Бургер (Whataburger)', 'Маленькая картошка'] }
+      ],
+      "Sunday": [
+        { id: 'w1su1', time: '12:30', cat: 'Food', title: 'Обед', details: ['Курица запеченая: 200г', '1 средний БАТАТ (запеченный)'] },
+        { id: 'w1su2', time: '14:00', cat: 'Gym', title: 'ЗАЛ: КАРДИО', details: ['45 мин ходьба (уклон 5-10%)', 'Растяжка'] }
+      ]
+    }
+  },
+  week2: {
+    prep: {
+      shopping: [
+        "Turkey Breast (Грудка индейки)", 
+        "Ground Beef 90/10 (Говяжий фарш)", 
+        "Cod Fillet (Филе трески)", 
+        "Quinoa (Киноа)", 
+        "Couscous (Кускус)", 
+        "Pears (Груши)", 
+        "Grapefruit (Грейпфрут)", 
+        "Zucchini (Цукини)"
+      ],
+      instructions: [
+        "EN: Quinoa: 1 cup dry + 2 cups water. RU: Киноа: 1 ст. сухого + 2 ст. воды.",
+        "EN: Couscous: Just add boiling water for 5 min. RU: Кускус: Просто залить кипятком на 5 мин.",
+        "EN: Bake Turkey at 400°F for 30 min. RU: Индейка: 200°C на 30 мин.",
+        "EN: Lean Steak: Pan-fry or Bake. RU: Стейк: Пожарить или запечь."
+      ]
+    },
+    schedule: {
+      "Monday": [
+        { id: 'w2m1', time: '05:30', cat: 'Gym', title: 'W2: Cardio + Abs', details: ['Burpees 3x10', 'Leg Raises 3x15', 'Plank 2 min'] },
+        { id: 'w2m2', time: '06:30', cat: 'Food', title: 'Завтрак: Шакшука', details: ['3 яйца', 'Томаты, лук, перец', 'Хлебцы 2 шт'] },
+        { id: 'w2m3', time: '12:20', cat: 'Food', title: 'Обед: Киноа + Индейка', details: ['Индейка запеченная: 150г', 'Quinoa: 1 cup', 'Цукини гриль'] },
+        { id: 'w2m4', time: '15:30', cat: 'Food', title: 'Перекус', details: ['1 Грейпфрут'] },
+        { id: 'w2m5', time: '17:15', cat: 'Food', title: 'Ужин: Хлебцы + Тунец', details: ['2 Рисовых хлебца', 'Tuna пакет', 'Огурец'] }
+      ],
+      "Tuesday": [
+        { id: 'w2tu1', time: '06:30', cat: 'Food', title: 'Завтрак: Овсянка + Груша', details: ['Oatmeal 0.5 cup', 'Молоко', 'Нарезанная груша'] },
+        { id: 'w2tu2', time: '14:00', cat: 'Food', title: 'Обед: Говядина + Кускус', details: ['Ground Beef: 150г', 'Couscous: 1 cup', 'Спаржевая фасоль'] },
+        { id: 'w2tu3', time: '16:00', cat: 'Food', title: 'Перекус', details: ['Ягоды или Орехи (горсть)'] },
+        { id: 'w2tu4', time: '16:45', cat: 'Food', title: 'Ужин: Стейк + Салат', details: ['Lean Steak: 150г', 'МНОГО зелени', 'Болгарский перец'] }
+      ],
+      "Wednesday": [
+         { id: 'w2w1', time: '12:30', cat: 'Food', title: 'Обед: Киноа + Рыба', details: ['Cod Fillet (Треска): 200г', 'Quinoa: 1 cup', 'Брокколи'] },
+         { id: 'w2w2', time: '15:00', cat: 'Food', title: 'Перекус', details: ['1 Груша'] },
+         { id: 'w2w3', time: '18:00', cat: 'Food', title: 'Ужин: Салат с индейкой', details: ['Индейка слайсы: 150г', 'Spring Mix', 'Половина авокадо'] }
+      ],
+      "Thursday": [
+         { id: 'w2th1', time: '06:30', cat: 'Food', title: 'Завтрак: Овсянка', details: ['Oatmeal 0.5 cup', 'Молоко', 'Банан'] },
+         { id: 'w2th2', time: '14:00', cat: 'Food', title: 'Обед: Кускус + Курица', details: ['Chicken: 150г', 'Couscous: 1 cup', 'Перец и кабачки'] },
+         { id: 'w2th3', time: '17:00', cat: 'Gym', title: 'W2: PUSH DAY', details: ['Dumbbell Press 3x12', 'Lateral Raises 3x15', 'Dips 3x max'] }
+      ],
+      "Friday": [
+         { id: 'w2fr1', time: '13:15', cat: 'Food', title: 'Обед: Хлебцы + Говядина', details: ['3 хлебца', 'Ground Beef 150г', 'Огурец'] },
+         { id: 'w2fr2', time: '15:30', cat: 'Food', title: 'Перекус', details: ['Грейпфрут'] },
+         { id: 'w2fr3', time: '14:00', cat: 'Gym', title: 'W2: PULL DAY', details: ['Pullups max', 'Seated Row 3x12', 'Facepulls 3x15'] }
+      ],
+      "Saturday": [
+         { id: 'w2sa1', time: '10:00', cat: 'Gym', title: 'W2: LEG DAY', details: ['Squats 3x10', 'Lunges 3x12', 'Calf Raises 3x20'] },
+         { id: 'w2sa2', time: '18:00', cat: 'Food', title: 'CHEAT MEAL', details: ['Sushi (Роллы)', 'Miso Soup'] }
+      ],
+      "Sunday": [
+         { id: 'w2su1', time: '12:30', cat: 'Food', title: 'Обед: Фиш-дей', details: ['Salmon: 200г', 'Запеченные овощи', '1 Батат'] },
+         { id: 'w2su2', time: '14:00', cat: 'Gym', title: 'W2: CARDIO', details: ['30 min Run', '15 min Swim/Stretching'] }
+      ]
+    }
+  }
 };
 
-const MealPrepTab = () => {
-  return (
-    <div className="p-4 animate-fadeIn">
-      <h2 className="text-3xl font-black text-orange-500 mb-6 uppercase italic tracking-tighter text-center">Meal Prep</h2>
-      
-      <div className="bg-gray-800 rounded-2xl p-6 border-l-8 border-yellow-500 mb-6 shadow-xl">
-        <h3 className="text-xl font-bold text-white mb-4 italic uppercase">🛒 Список H-E-B</h3>
-        <ul className="space-y-3 font-medium">
-          <li className="text-lg text-gray-200">🍗 <b>Мясо:</b> 3 lbs грудки (Family Pack)</li>
-          <li className="text-lg text-gray-200">🍚 <b>Гарнир:</b> Brown Rice + 3 Батата</li>
-          <li className="text-lg text-gray-200">🌈 <b>Овощи:</b> Перец, Лук, Шпинат, Брокколи</li>
-          <li className="text-lg text-gray-200">🍳 <b>Завтрак:</b> 18 яиц + Овощной микс</li>
-        </ul>
-      </div>
-
-      <div className="bg-gray-800 rounded-2xl p-6 border-l-8 border-red-500 mb-6 shadow-xl">
-        <h3 className="text-xl font-bold text-white mb-4 italic uppercase">🔥 Готовка</h3>
-        <div className="space-y-4 text-base text-gray-300">
-          <p><span className="text-red-400 font-bold underline">МЯСО + ОВОЩИ:</span> Духовка 400°F, 22 мин. Нарежь перец и лук прямо к курице.</p>
-          <p><span className="text-blue-400 font-bold underline">РИС:</span> 1.5 чашки сухого риса + 3 чашки воды.</p>
-          <p><span className="text-orange-400 font-bold underline">БАТАТ:</span> В микроволновку на 7 мин. Ешь в Вс или вместо риса.</p>
-        </div>
-      </div>
-
-      <div className="bg-green-900/30 rounded-2xl p-6 border-2 border-green-500 shadow-xl mb-24 text-center">
-        <h3 className="text-xl font-bold text-green-400 mb-4 uppercase">🍱 Формула Порции</h3>
-        <div className="space-y-2 text-lg text-white font-bold">
-          <p>🍗 Мясо: 150г (готового)</p>
-          <p>🍚 Гарнир: 1 cup (риса)</p>
-          <p>🌈 Овощи: БЕЗ ОГРАНИЧЕНИЙ</p>
-        </div>
-      </div>
+const MotivationPopup = ({ text, onClose }) => (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 animate-fadeIn backdrop-blur-md">
+    <div className="bg-gray-800 border-2 border-yellow-500 rounded-3xl p-8 w-full max-w-sm text-center shadow-[0_0_60px_rgba(234,179,8,0.4)] relative">
+      <p className="text-sm font-black text-yellow-500 mb-2 uppercase tracking-[0.2em]">Chuck Norris Fact</p>
+      <p className="text-xl font-black italic text-white mb-8 italic">"{text}"</p>
+      <button onClick={onClose} className="w-full bg-yellow-500 text-black font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-yellow-400 transition-all">ПОГНАЛИ ДАЛЬШЕ</button>
     </div>
-  );
-};
+  </div>
+);
 
 const TaskCard = ({ task, isDone, onToggle }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const borderClass = task.cat === 'Gym' ? 'border-red-500' : task.cat === 'Food' ? 'border-green-500' : 'border-blue-500';
+  const borderClass = task.cat === 'Gym' ? 'border-red-500 shadow-[inset_10px_0_15px_-10px_rgba(239,68,68,0.2)]' : task.cat === 'Food' ? 'border-green-500 shadow-[inset_10px_0_15px_-10px_rgba(34,197,94,0.2)]' : 'border-blue-500 shadow-[inset_10px_0_15px_-10px_rgba(59,130,246,0.2)]';
   const icon = task.cat === 'Gym' ? '💪' : task.cat === 'Food' ? '🥗' : '💤';
-
   return (
-    <div className={`bg-gray-800 rounded-xl overflow-hidden shadow-lg mb-4 transition-all duration-300 ${isDone ? 'opacity-50 grayscale' : ''}`}>
-      <div className={`p-5 flex items-center justify-between border-l-8 ${borderClass} cursor-pointer`} onClick={() => setIsOpen(!isOpen)}>
+    <div className={`bg-gray-800/70 rounded-3xl overflow-hidden border border-gray-700/30 transition-all duration-300 ${isDone ? 'opacity-30 grayscale' : 'shadow-xl'}`}>
+      <div className={`p-5 flex items-center justify-between border-l-[6px] ${borderClass} cursor-pointer`} onClick={() => setIsOpen(!isOpen)}>
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm font-bold bg-gray-700 px-2 py-1 rounded text-gray-200">{task.time}</span>
-            <span className="text-sm text-gray-400 uppercase tracking-widest font-semibold">{task.cat}</span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] font-black bg-gray-700/80 px-2.5 py-0.5 rounded text-gray-300 tracking-tighter">{task.time}</span>
+            <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{task.cat}</span>
           </div>
-          <h3 className={`text-xl font-bold leading-tight ${isDone ? 'line-through text-gray-500' : 'text-white'}`}>{task.title}</h3>
+          <h3 className={`text-lg font-black tracking-tight leading-tight ${isDone ? 'line-through text-gray-500' : 'text-white'}`}>{task.title}</h3>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onToggle(task.id); }} className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all ml-4 flex-shrink-0 ${isDone ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
-          <span className="text-2xl">{isDone ? '✓' : icon}</span>
+        <button onClick={(e) => { e.stopPropagation(); onToggle(task.id); }} className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-green-500 border-green-500 scale-90' : 'border-gray-600 active:scale-95'}`}>
+          <span className="text-xl">{isDone ? '✓' : icon}</span>
         </button>
       </div>
       {isOpen && (
-        <div className="bg-gray-700/50 px-5 py-4 transition-all">
-          <ul className="list-disc list-inside space-y-2">
-            {task.details.map((detail, idx) => <li key={idx} className="text-base text-gray-200 font-medium">{detail}</li>)}
+        <div className="bg-gray-900/50 px-5 py-4 border-t border-gray-700/20">
+          <ul className="space-y-2">
+            {task.details.map((d, i) => <li key={i} className="text-xs font-bold text-gray-400 flex items-start gap-2.5"><span className="text-yellow-500 mt-1">•</span>{d}</li>)}
           </ul>
         </div>
       )}
@@ -105,77 +166,194 @@ const TaskCard = ({ task, isDone, onToggle }) => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Today');
+  const [currentWeek, setCurrentWeek] = useState(() => localStorage.getItem('spartanWeek') || 'week1');
+  const [unit, setUnit] = useState(() => localStorage.getItem('spartanUnit') || 'kg');
   const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  
-  const [today, setToday] = useState(() => {
-    const dayIndex = new Date().getDay();
-    return daysMap[dayIndex];
-  });
-
+  const [today, setToday] = useState(daysMap[new Date().getDay()]);
   const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('spartanProgress') || '{}'));
+  const [weightData, setWeightData] = useState(() => JSON.parse(localStorage.getItem('spartanWeight')) || [{date: '14.02', weight: 85}]);
+  const [disciplineData, setDisciplineData] = useState(() => JSON.parse(localStorage.getItem('spartanDiscipline')) || []);
+  const [newWeight, setNewWeight] = useState('');
+  const [chuckJoke, setChuckJoke] = useState(null);
+
+  // Хранение данных (LocalStorage)
+  useEffect(() => {
+    localStorage.setItem('spartanWeek', currentWeek);
+    localStorage.setItem('spartanUnit', unit);
+    localStorage.setItem('spartanProgress', JSON.stringify(checkedItems));
+    localStorage.setItem('spartanWeight', JSON.stringify(weightData));
+    localStorage.setItem('spartanDiscipline', JSON.stringify(disciplineData));
+  }, [currentWeek, unit, checkedItems, weightData, disciplineData]);
+
+  const tasks = megaDatabase[currentWeek].schedule[today] || [];
+  const progress = tasks.length ? Math.round((tasks.filter(t => checkedItems[t.id]).length / tasks.length) * 100) : 0;
+
+  // Обновление графика дисциплины
+  useEffect(() => {
+    const todayDate = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+    setDisciplineData(prev => {
+      const filtered = prev.filter(d => d.date !== todayDate);
+      return [...filtered, { date: todayDate, score: progress }].slice(-10);
+    });
+  }, [progress]);
+
+  const handleAddWeight = () => {
+    if(!newWeight) return;
+    const date = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+    setWeightData([...weightData, { date, weight: parseFloat(newWeight) }]);
+    setNewWeight('');
+    confetti({ particleCount: 100, spread: 50 });
+  };
+
+  const toggleCheck = async (id) => {
+    const isChecking = !checkedItems[id];
+    setCheckedItems(prev => ({ ...prev, [id]: isChecking }));
+    if (isChecking) {
+      try {
+        const res = await fetch('https://api.chucknorris.io/jokes/random');
+        const json = await res.json();
+        setChuckJoke(json.value);
+      } catch (e) { setChuckJoke("Chuck Norris approved your workout."); }
+    }
+  };
 
   useEffect(() => {
-    const now = new Date();
-    // Умное воскресенье: после 12:00 открываем Meal Prep
-    if (now.getDay() === 0 && now.getHours() >= 12) {
-      setActiveTab('Prep');
+    if (progress === 100 && tasks.length > 0) {
+      confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
     }
-  }, []);
-
-  useEffect(() => { localStorage.setItem('spartanProgress', JSON.stringify(checkedItems)); }, [checkedItems]);
-
-  const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
-
-  const tasks = scheduleDB[today] || [];
-  const progress = tasks.length ? Math.round((tasks.filter(t => checkedItems[t.id]).length / tasks.length) * 100) : 0;
+  }, [progress, tasks.length]);
 
   return (
     <div className="h-screen bg-gray-900 text-white font-sans flex flex-col overflow-hidden">
-      {activeTab === 'Today' && (
-        <div className="p-6 bg-gray-900 shadow-xl border-b border-gray-800 flex-shrink-0">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <h1 className="text-3xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase">СПАРТАНЕЦ</h1>
-              <p className="text-lg text-gray-400 font-bold">{today}</p>
+      {/* HEADER */}
+      <div className="p-6 bg-gray-900 border-b border-gray-800 flex-shrink-0">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase tracking-tighter">СПАРТАНЕЦ</h1>
+          <div className="flex gap-2">
+            <div className="flex bg-gray-800 rounded-xl p-1 border border-gray-700">
+              <button onClick={() => setUnit('kg')} className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${unit === 'kg' ? 'bg-green-500 text-black' : 'text-gray-500'}`}>KG</button>
+              <button onClick={() => setUnit('lb')} className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${unit === 'lb' ? 'bg-green-500 text-black' : 'text-gray-500'}`}>LB</button>
             </div>
-            <div className="text-3xl font-bold font-mono text-white">{progress}%</div>
-          </div>
-          <div className="h-3 bg-gray-700 rounded-full overflow-hidden mb-4">
-            <div className={`h-full transition-all duration-700 ease-out ${progress === 100 ? 'bg-green-500' : 'bg-yellow-500'}`} style={{ width: `${progress}%` }}></div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center bg-gray-800 rounded-lg p-3 border border-gray-700 font-bold text-xs uppercase tracking-tighter">
-              <div className="text-green-400">🍗 2150 ккал</div>
-              <div className="border-l border-gray-700 text-red-400">🔥 2600+ ккал</div>
-              <div className="border-l border-gray-700 text-blue-400">🥩 180г белка</div>
+            <div className="flex bg-gray-800 rounded-xl p-1 border border-gray-700 text-[10px] font-black">
+              <button onClick={() => setCurrentWeek('week1')} className={`px-3 py-1 rounded-lg ${currentWeek === 'week1' ? 'bg-orange-500 text-white' : 'text-gray-500'}`}>W1</button>
+              <button onClick={() => setCurrentWeek('week2')} className={`px-3 py-1 rounded-lg ${currentWeek === 'week2' ? 'bg-orange-500 text-white' : 'text-gray-500'}`}>W2</button>
+            </div>
           </div>
         </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-44">
-        {activeTab === 'Today' ? (
-          <div className="p-4 space-y-4">
-            {tasks.map(task => <TaskCard key={task.id} task={task} isDone={!!checkedItems[task.id]} onToggle={toggleCheck} />)}
-            {!tasks.length && <div className="text-center text-gray-500 mt-10 text-xl font-bold italic uppercase">REST DAY</div>}
-          </div>
-        ) : <MealPrepTab />}
+        
+        {activeTab === 'Today' && (
+          <>
+            <div className="flex justify-between items-end mb-2">
+              <p className="text-gray-400 font-bold uppercase text-xs tracking-widest">{today}</p>
+              <p className="text-2xl font-black">{progress}%</p>
+            </div>
+            <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
+              <div className="h-full bg-orange-500 transition-all duration-1000 shadow-[0_0_15px_rgba(249,115,22,0.4)]" style={{ width: `${progress}%` }}></div>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 flex flex-col z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-        <div className="flex overflow-x-auto no-scrollbar border-b border-gray-800/50">
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        {activeTab === 'Today' && (
+          <div className="p-4 space-y-4">
+            {tasks.map(task => <TaskCard key={task.id} task={task} isDone={!!checkedItems[task.id]} onToggle={toggleCheck} />)}
+          </div>
+        )}
+
+        {activeTab === 'Prep' && (
+          <div className="p-4 space-y-6 pb-44 no-scrollbar">
+            <h2 className="text-2xl font-black text-center uppercase italic text-orange-500 underline underline-offset-8">Meal Prep: {currentWeek}</h2>
+            <div className="bg-gray-800 rounded-3xl p-6 border-l-8 border-yellow-500 shadow-xl">
+              <h3 className="font-black mb-4 uppercase text-sm tracking-widest text-white underline">🛒 H-E-B List (English / Русский)</h3>
+              <ul className="space-y-3 text-sm text-gray-300 font-bold italic">
+                {megaDatabase[currentWeek].prep.shopping.map((item, i) => <li key={i} className="flex items-center gap-2 underline decoration-gray-700 underline-offset-4"><span className="text-yellow-500">•</span>{item}</li>)}
+              </ul>
+            </div>
+            <div className="bg-gray-800 rounded-3xl p-6 border-l-8 border-red-500 shadow-xl">
+              <h3 className="font-black mb-4 uppercase text-sm tracking-widest text-red-400 underline decoration-red-900">🔥 Инструкции по готовке</h3>
+              <ul className="space-y-3 text-xs text-gray-300 font-bold uppercase leading-relaxed">
+                {megaDatabase[currentWeek].prep.instructions.map((item, i) => <li key={i} className="flex items-start gap-2 border-b border-gray-700 pb-2"><span className="text-red-500 mt-1">⚡</span>{item}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'Progress' && (
+          <div className="p-4 space-y-6 pb-44">
+             <h2 className="text-2xl font-black text-center uppercase italic">Correlation & Stats</h2>
+             
+             {/* ГРАФИК 1: ВЕС (Unit Switchable) */}
+             <div className="bg-gray-800 rounded-3xl p-4 border border-gray-700 shadow-2xl">
+              <p className="text-[10px] font-black uppercase text-gray-500 mb-4 text-center">Body Weight Dynamics ({unit})</p>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weightData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                    <XAxis dataKey="date" stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis domain={['dataMin - 2', 'dataMax + 2']} stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '15px' }} />
+                    <Line type="monotone" dataKey="weight" stroke="#10B981" strokeWidth={5} dot={{ r: 5, fill: '#10B981' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+             {/* ГРАФИК 2: ДИСЦИПЛИНА (% Выполнения) */}
+             <div className="bg-gray-800 rounded-3xl p-4 border border-gray-700 shadow-2xl">
+              <p className="text-[10px] font-black uppercase text-gray-500 mb-4 text-center">Discipline Correlation (% Tasks Done)</p>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={disciplineData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                    <XAxis dataKey="date" stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100]} stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '15px' }} />
+                    <Line type="stepAfter" dataKey="score" stroke="#F59E0B" strokeWidth={5} dot={{ r: 5, fill: '#F59E0B' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* INPUT WEIGHT */}
+            <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700 flex flex-col items-center gap-4">
+              <p className="text-xs font-black uppercase text-gray-500 tracking-widest">Добавить замер ({unit})</p>
+              <div className="flex gap-2 w-full">
+                <input 
+                  type="number" step="0.1" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} 
+                  placeholder={`Ваш вес в ${unit}`} 
+                  className="flex-1 bg-gray-900 border border-gray-700 rounded-2xl px-4 py-3 font-black text-center focus:border-orange-500 outline-none"
+                />
+                <button onClick={handleAddWeight} className="bg-green-500 text-black px-8 rounded-2xl font-black hover:bg-green-400 active:scale-95 transition-all">OK</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* FOOTER */}
+      <div className="bg-gray-900 border-t border-gray-800 flex-shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
+        <div className="flex overflow-x-auto no-scrollbar border-b border-gray-800/30">
           {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d, i) => {
-            const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
             return (
-              <button key={d} onClick={() => { setToday(fullDays[i]); setActiveTab('Today'); }} className={`flex-1 min-w-[60px] py-4 text-sm font-black transition-colors ${activeTab === 'Today' && today === fullDays[i] ? 'text-yellow-400 bg-gray-800/50' : 'text-gray-500'}`}>
+              <button key={d} onClick={() => { setToday(dayNames[i]); setActiveTab('Today'); }} 
+                className={`flex-1 min-w-[55px] py-4 text-[10px] font-black transition-all ${today === dayNames[i] && activeTab === 'Today' ? 'text-yellow-500 bg-gray-800/50' : 'text-gray-500'}`}
+              >
                 {d}
               </button>
             )
           })}
         </div>
-        <div className="flex h-16">
-          <button onClick={() => setActiveTab('Today')} className={`flex-1 font-black tracking-widest text-xs uppercase ${activeTab === 'Today' ? 'text-white bg-gray-800' : 'text-gray-600'}`}>ГРАФИК</button>
-          <button onClick={() => setActiveTab('Prep')} className={`flex-1 font-black tracking-widest text-xs uppercase relative ${activeTab === 'Prep' ? 'text-orange-500 bg-gray-800' : 'text-gray-600'}`}>PREP 🍱{activeTab === 'Prep' && <span className="absolute bottom-0 left-0 w-full h-1 bg-orange-500 shadow-[0_0_10px_orange]"></span>}</button>
+        <div className="flex h-16 uppercase italic">
+          <button onClick={() => setActiveTab('Today')} className={`flex-1 font-black text-[10px] tracking-widest ${activeTab === 'Today' ? 'text-white bg-gray-800/40' : 'text-gray-600'}`}>Dashboard</button>
+          <button onClick={() => setActiveTab('Prep')} className={`flex-1 font-black text-[10px] tracking-widest ${activeTab === 'Prep' ? 'text-orange-500 bg-gray-800/40' : 'text-gray-600'}`}>Meal Prep</button>
+          <button onClick={() => setActiveTab('Progress')} className={`flex-1 font-black text-[10px] tracking-widest ${activeTab === 'Progress' ? 'text-green-500 bg-gray-800/40' : 'text-gray-600'}`}>Stats</button>
         </div>
       </div>
+
+      {chuckJoke && <MotivationPopup text={chuckJoke} onClose={() => setChuckJoke(null)} />}
     </div>
   );
 }
