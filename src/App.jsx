@@ -113,14 +113,31 @@ const TaskCard = ({ task, isDone, onToggle }) => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Today');
+  
+  // Массив для сопоставления номера дня (0-6) с ключами базы
+  const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   const [today, setToday] = useState(() => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[new Date().getDay()];
+    const now = new Date();
+    const dayIndex = now.getDay(); // 0 - воскресенье, 1 - понедельник...
+    return daysMap[dayIndex];
   });
+
   const [checkedItems, setCheckedItems] = useState(() => {
     const saved = localStorage.getItem('spartanProgress');
     return saved ? JSON.parse(saved) : {};
   });
+
+  // Эффект для автоматического переключения на MEAL PREP в воскресенье после 12:00
+  useEffect(() => {
+    const now = new Date();
+    const isSunday = now.getDay() === 0;
+    const isAfterNoon = now.getHours() >= 12;
+
+    if (isSunday && isAfterNoon) {
+      setActiveTab('Prep');
+    }
+  }, []); // Сработает один раз при запуске
 
   useEffect(() => {
     localStorage.setItem('spartanProgress', JSON.stringify(checkedItems));
@@ -129,10 +146,8 @@ export default function App() {
   const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
 
   const tasks = scheduleDB[today] || [];
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => checkedItems[t.id]).length;
-  const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
+  const progress = tasks.length ? Math.round((tasks.filter(t => checkedItems[t.id]).length / tasks.length) * 100) : 0;
+  
   return (
     <div className="h-screen bg-gray-900 text-white font-sans flex flex-col overflow-hidden">
       {/* HEADER (Sticky) */}
